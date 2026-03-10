@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Creative Portfolio — From a seed of an idea to something extraordinary" />
+  <title>Portfolio — From Seed to Vision</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/styles/main.css" />
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div id="loading-screen">
+    <div class="loader">
+      <div class="loader-ring"></div>
+      <p class="loader-text">Planting the seed...</p>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <header class="hero-text">
+      <p class="hero-subtitle">every great thing begins with</p>
+      <h1 class="hero-title">a seed of an <em>idea</em></h1>
+    </header>
+    <div class="scroll-hint">
+      <span>scroll to grow</span>
+      <div class="scroll-arrow"></div>
+    </div>
+    <p class="planted-text">the <em>idea</em> was planted</p>
+    <p class="grown-text">with time, effort and resources the <em>idea</em> got bigger</p>
+    <section class="about-section" id="about-section" aria-label="About">
+      <h2 class="about-title">About</h2>
+      <p class="about-text">Creative developer & designer — turning ideas into digital experiences. From concept to code, I bring visions to life.</p>
+      <div class="about-links">
+        <a href="#projects" class="about-link">Projects</a>
+        <a href="#contact" class="about-link">Contact</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- Scroll spacer — drives the growth animation -->
+  <div id="scroll-spacer"></div>
+
+  <section id="projects" class="content-section" aria-label="Projects">
+    <h2 class="content-title">Projects</h2>
+    <p class="content-text">Selected work — coming soon.</p>
+  </section>
+
+  <section id="contact" class="content-section" aria-label="Contact">
+    <h2 class="content-title">Contact</h2>
+    <p class="content-text">Get in touch — <a href="mailto:hello@example.com" class="content-link">hello@example.com</a></p>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
