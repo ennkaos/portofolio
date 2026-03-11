@@ -123,6 +123,42 @@ body {
   opacity: 1;
 }
 
+.lang-switcher {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  gap: 0.25rem;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.lang-btn {
+  padding: 0.35rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  background: rgba(10, 18, 8, 0.6);
+  border: 1px solid rgba(93, 176, 117, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.lang-btn:hover {
+  color: var(--color-cream);
+  background: rgba(10, 18, 8, 0.85);
+  border-color: rgba(93, 176, 117, 0.4);
+}
+
+.lang-btn.active {
+  color: var(--color-green);
+  background: rgba(93, 176, 117, 0.15);
+  border-color: rgba(93, 176, 117, 0.5);
+}
+
 .hero-text {
   text-align: center;
   padding-top: 3vh;
@@ -548,6 +584,16 @@ body {
 
   #overlay {
     padding: 1.5rem 1rem;
+  }
+
+  .lang-switcher {
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .lang-btn {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.7rem;
   }
 
   .metaphor-text {

@@ -9,6 +9,7 @@ import { LeafParticles } from './scene/LeafParticles.js';
 import { Flowers } from './scene/Flowers.js';
 import { Environment, GROUND_Y } from './scene/Environment.js';
 import { Sprout } from './scene/Sprout.js';
+import { getLang, setLang, applyTranslations, t } from './i18n.js';
 
 const SPROUT_START_Y = 0.6875 * 0.7;
 
@@ -39,6 +40,7 @@ class App {
 
     this.mouseNDC = new THREE.Vector2(-2, -2);
     this.mouseWorld = new THREE.Vector3(0, GROUND_Y, 0);
+    this._smoothMouseWorld = new THREE.Vector3(0, GROUND_Y, 0);
     this.mouseOverCanvas = false;
     this.groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -GROUND_Y);
     this.raycaster = new THREE.Raycaster();
@@ -60,6 +62,12 @@ class App {
     this._createObjects();
     this._createPostProcessing();
     this._addEventListeners();
+    const currentLang = getLang();
+    applyTranslations(currentLang);
+    document.querySelectorAll('.lang-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.lang === currentLang);
+      b.setAttribute('aria-pressed', b.dataset.lang === currentLang);
+    });
     this._hideLoading();
     this._animate();
   }
@@ -157,8 +165,8 @@ class App {
       if (!this.isDragging) return;
       const dx = e.clientX - this.previousMouse.x;
       const dy = e.clientY - this.previousMouse.y;
-      this.rotationVelocity.x = dy * 0.005;
-      this.rotationVelocity.y = dx * 0.005;
+      this.rotationVelocity.x = dy * 0.0035;
+      this.rotationVelocity.y = dx * 0.0035;
       this.previousMouse.set(e.clientX, e.clientY);
     });
 
@@ -177,8 +185,8 @@ class App {
       if (!this.isDragging || e.touches.length !== 1) return;
       const dx = e.touches[0].clientX - this.previousMouse.x;
       const dy = e.touches[0].clientY - this.previousMouse.y;
-      this.rotationVelocity.x = dy * 0.005;
-      this.rotationVelocity.y = dx * 0.005;
+      this.rotationVelocity.x = dy * 0.0035;
+      this.rotationVelocity.y = dx * 0.0035;
       this.previousMouse.set(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
 
@@ -195,6 +203,17 @@ class App {
     if (drawerTrigger) {
       drawerTrigger.addEventListener('click', () => this._toggleAboutDrawer());
     }
+
+    document.querySelectorAll('.lang-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        setLang(lang);
+        document.querySelectorAll('.lang-btn').forEach((b) => {
+          b.classList.toggle('active', b.dataset.lang === lang);
+          b.setAttribute('aria-pressed', b.dataset.lang === lang);
+        });
+      });
+    });
   }
 
   _toggleAboutDrawer() {
@@ -203,7 +222,7 @@ class App {
     const trigger = document.getElementById('about-drawer-trigger');
     if (trigger) {
       trigger.setAttribute('aria-expanded', isOpen);
-      trigger.setAttribute('aria-label', isOpen ? 'Close CV' : 'Open CV');
+      trigger.setAttribute('aria-label', isOpen ? t('cvClose') : t('cvOpen'));
     }
   }
 
@@ -272,7 +291,7 @@ class App {
     const smooth = (t) => { t = clamp01(t); return t * t * (3 - 2 * t); };
     const lerp = THREE.MathUtils.lerp;
 
-    const scrollLerp = 1.0 - Math.exp(-5.0 * dt);
+    const scrollLerp = 1.0 - Math.exp(-3.2 * dt);
     this.smoothScroll += (this.scrollProgress - this.smoothScroll) * scrollLerp;
     const s = this.smoothScroll;
 
@@ -296,7 +315,7 @@ class App {
 
     // Reset seed rotation
     if (s > 0.03) {
-      const r = 1.0 - Math.exp(-3.0 * dt);
+      const r = 1.0 - Math.exp(-2.5 * dt);
       this.seed.group.rotation.x *= (1 - r);
       this.seed.group.rotation.z *= (1 - r);
       this.seed.group.rotation.y += (0 - this.seed.group.rotation.y) * r;
@@ -371,10 +390,10 @@ class App {
       ty: crownCenterY,
     };
 
-    // Blend weights — each phase smoothly takes over from previous
-    const wSprout = smooth(clamp01(sproutProgress / 0.12));
-    const wMat    = smooth(clamp01(maturityProgress / 0.12));
-    const wFG     = smooth(clamp01(fullGrowthProgress / 0.12));
+    // Blend weights — each phase smoothly takes over from previous (wider = smoother transitions)
+    const wSprout = smooth(clamp01(sproutProgress / 0.18));
+    const wMat    = smooth(clamp01(maturityProgress / 0.18));
+    const wFG     = smooth(clamp01(fullGrowthProgress / 0.18));
     const wUnder  = smooth(underTreeProgress);
 
     let cz = seedCam.z, cy = seedCam.y, cty = seedCam.ty;
@@ -407,7 +426,7 @@ class App {
     }
     if (this.educationText) {
       const eduIn  = smooth(clamp01((sproutProgress - 0.40) / 0.18));
-      const eduOut = 1.0 - smooth(clamp01((sproutProgress - 0.88) / 0.15));
+      const eduOut = 1.0 - smooth(clamp01((sproutProgress - 0.82) / 0.18));
       const eduOp  = eduIn * eduOut;
       this.educationText.style.opacity = eduOp;
       this.educationText.style.transform = `translate(-50%, ${ty(eduOp)})`;
@@ -463,7 +482,7 @@ class App {
     if (this.prefersReducedMotion) time *= 0.02;
 
     const now = performance.now() * 0.001;
-    const dt = Math.min(now - this._lastTime, 0.05);
+    const dt = Math.min(now - this._lastTime, 0.08);
     this._lastTime = now;
 
     this._updateScroll(dt);
@@ -472,13 +491,13 @@ class App {
       this.seed.group.rotation.x += this.rotationVelocity.x;
       this.seed.group.rotation.y += this.rotationVelocity.y;
       if (!this.isDragging) {
-        const damp = Math.exp(-3.0 * dt);
+        const damp = Math.exp(-2.5 * dt);
         this.rotationVelocity.x *= damp;
         this.rotationVelocity.y *= damp;
       }
     }
 
-    const camLerp = 1.0 - Math.exp(-3.5 * dt);
+    const camLerp = 1.0 - Math.exp(-2.5 * dt);
     const zTarget = this.cameraBase.z * (this.isMobile ? this.mobileZoomFactor : 1);
     this.camera.position.z += (zTarget - this.camera.position.z) * camLerp;
     this.camera.position.y += (this.cameraBase.y - this.camera.position.y) * camLerp;
@@ -489,7 +508,11 @@ class App {
     this.raycaster.setFromCamera(this.mouseNDC, this.camera);
     const hit = this.raycaster.ray.intersectPlane(this.groundPlane, this.mouseWorld);
     const mouseRadius = this.mouseOverCanvas && hit && this.smoothScroll > 0.2 ? 1.8 : 0;
-    this.environment.setMousePosition(this.mouseWorld.x, this.mouseWorld.y, this.mouseWorld.z, mouseRadius);
+    if (hit) {
+      const mouseLerp = 1.0 - Math.exp(-4.0 * dt);
+      this._smoothMouseWorld.lerpVectors(this._smoothMouseWorld, this.mouseWorld, mouseLerp);
+    }
+    this.environment.setMousePosition(this._smoothMouseWorld.x, this._smoothMouseWorld.y, this._smoothMouseWorld.z, mouseRadius);
 
     this.seed.update(time);
     this.particles.update(time);
