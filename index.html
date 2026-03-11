@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="Creative Portfolio — From a seed of an idea to something extraordinary" />
-  <title>Portfolio — From Seed to Vision</title>
+  <meta name="description" content="Alexandru Florin Bucur — Software Engineer, Web Developer, Graphic Designer, Solution Architect & Business Analyst. From a seed of an idea to something extraordinary." />
+  <title>Alexandru Florin Bucur — Software Engineer · Web Developer · Solution Architect</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -22,21 +22,60 @@
 
   <div id="overlay">
     <header class="hero-text">
-      <p class="hero-subtitle">every great thing begins with</p>
-      <h1 class="hero-title">a seed of an <em>idea</em></h1>
+      <p class="hero-subtitle">Alexandru Florin Bucur</p>
+      <h1 class="hero-title">Software Engineer <em>·</em> Web Developer <em>·</em> Graphic Designer <em>·</em> Solution Architect <em>·</em> Business Analyst</h1>
+      <p class="hero-meta">every great thing begins with a seed of an <em>idea</em></p>
     </header>
-    <div class="scroll-hint">
-      <span>scroll to grow</span>
-      <div class="scroll-arrow"></div>
+    <div class="scroll-hint" aria-label="Scroll to grow">
+      <span class="scroll-hint-text">scroll to grow</span>
+      <div class="scroll-arrows">
+        <span class="scroll-chevron" aria-hidden="true"></span>
+        <span class="scroll-chevron scroll-chevron-2" aria-hidden="true"></span>
+        <span class="scroll-chevron scroll-chevron-3" aria-hidden="true"></span>
+      </div>
     </div>
-    <p class="planted-text">the <em>idea</em> was planted</p>
-    <p class="grown-text">with time, effort and resources the <em>idea</em> got bigger</p>
-    <section class="about-section" id="about-section" aria-label="About">
-      <h2 class="about-title">About</h2>
-      <p class="about-text">Creative developer & designer — turning ideas into digital experiences. From concept to code, I bring visions to life.</p>
+    <div class="metaphor-band" aria-live="polite">
+      <p class="planted-text metaphor-text">the <em>idea</em> was planted</p>
+      <p class="education-text metaphor-text">BSc Economic Informatics — Transilvania University of Brașov <em>(2018–2021)</em></p>
+      <p class="maturity-text metaphor-text">university behind me — time to build my <em>own</em> things</p>
+      <p class="grown-text metaphor-text">with time, effort and experience the <em>idea</em> grew — 4+ years building enterprise solutions</p>
+    </div>
+    <div class="pool-hints" id="pool-hints">
+      <p class="flower-hint" id="flower-hint">Click on the pools to dive in</p>
+      <p class="pool-privacy-hint" id="pool-privacy-hint">Many projects are protected by privacy laws and NDAs — I cannot display them publicly</p>
+    </div>
+    <section class="about-section" id="about-section" aria-label="CV">
+      <h2 class="about-title">Alexandru Florin Bucur</h2>
+      <p class="about-role">Software Engineer · Web Developer · Graphic Designer · Solution Architect · Business Analyst</p>
+      <div class="about-contact">
+        <a href="mailto:bucur.alexandru0106@gmail.com" class="about-link">bucur.alexandru0106@gmail.com</a>
+        <a href="tel:+393270671906" class="about-link">+39 327 067 1906</a>
+        <span class="about-meta">Calenzano, Italy</span>
+      </div>
+      <p class="about-langs">Romanian (native) · Italian (C1–C2) · English (C1–C2)</p>
+      <p class="about-text">Software Engineer, Web Developer, Graphic Designer, Solution Architect & Business Analyst with 4+ years developing enterprise web applications for banking and public institutions in Italy. Backend with Java, frontend with Angular & React. Building scalable platforms, batch systems, and internal portals. Skilled in using <strong>AI for marketing and business analysis</strong>.</p>
+      <div class="about-skills">
+        <strong>Frontend:</strong> Angular, React, Three.js, GSAP, Vite, Redux, RxJS, TypeScript, JavaScript, HTML5, CSS3, SASS
+      </div>
+      <div class="about-skills">
+        <strong>Backend:</strong> Java, Spring Boot, Node.js, Express, Hibernate, REST APIs, C#
+      </div>
+      <div class="about-skills">
+        <strong>Tools:</strong> Git, Agile/Scrum, Webpack
+      </div>
+      <div class="about-skills about-skills-ai">
+        <strong>AI:</strong> Marketing automation, business analysis, data-driven insights
+      </div>
+      <div class="about-exp">
+        <strong>Web Application Developer</strong> — Avanade Italy (2022–Present)<br>
+        <span class="about-exp-detail">Credem Bank batch systems · ItaloTreno portal (React) · Dynamic form engine (Angular) · Fleet management & HR portals for Italian Ministry</span>
+      </div>
+      <p class="about-edu"><strong>BSc Economic Informatics</strong> — Transilvania University of Brașov (2018–2021)</p>
       <div class="about-links">
-        <a href="#projects" class="about-link">Projects</a>
-        <a href="#contact" class="about-link">Contact</a>
+        <a href="https://www.linkedin.com/in/bucur-alexandru-932970205/" target="_blank" rel="noopener noreferrer" class="about-link" aria-label="LinkedIn">LinkedIn</a>
+        <a href="https://github.com/ennkaos" target="_blank" rel="noopener noreferrer" class="about-link" aria-label="GitHub">GitHub</a>
+        <a href="https://www.instagram.com/bucuralexandruhq/" target="_blank" rel="noopener noreferrer" class="about-link" aria-label="Instagram">Instagram</a>
+        <a href="https://www.facebook.com/Ennkaos" target="_blank" rel="noopener noreferrer" class="about-link" aria-label="Facebook">Facebook</a>
       </div>
     </section>
   </div>
@@ -46,12 +85,18 @@
 
   <section id="projects" class="content-section" aria-label="Projects">
     <h2 class="content-title">Projects</h2>
-    <p class="content-text">Selected work — coming soon.</p>
+    <p class="content-text projects-hint">Click on the pools in the grass to dive in — each opens a GitHub repo.</p>
+    <p class="content-text projects-privacy">Many of my projects are protected by privacy laws and NDAs, so I cannot display them publicly.</p>
+    <p class="content-text projects-more">There are many other projects I cannot show here. <a href="https://github.com/ennkaos" target="_blank" rel="noopener noreferrer" class="content-link">View all on GitHub</a></p>
   </section>
 
   <section id="contact" class="content-section" aria-label="Contact">
     <h2 class="content-title">Contact</h2>
-    <p class="content-text">Get in touch — <a href="mailto:hello@example.com" class="content-link">hello@example.com</a></p>
+    <p class="content-text"><a href="mailto:bucur.alexandru0106@gmail.com" class="content-link">bucur.alexandru0106@gmail.com</a> · <a href="tel:+393270671906" class="content-link">+39 327 067 1906</a></p>
+    <div class="content-links">
+      <a href="https://www.linkedin.com/in/bucur-alexandru-932970205/" target="_blank" rel="noopener noreferrer" class="content-link">LinkedIn</a>
+      <a href="https://github.com/ennkaos" target="_blank" rel="noopener noreferrer" class="content-link">GitHub</a>
+    </div>
   </section>
 
   <script type="module" src="/src/main.js"></script>

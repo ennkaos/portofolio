@@ -20,8 +20,11 @@ class App {
     this.heroText = document.querySelector('.hero-text');
     this.scrollHint = document.querySelector('.scroll-hint');
     this.plantedText = document.querySelector('.planted-text');
+    this.educationText = document.querySelector('.education-text');
+    this.maturityText = document.querySelector('.maturity-text');
     this.grownText = document.querySelector('.grown-text');
     this.aboutSection = document.getElementById('about-section');
+    this.poolHints = document.getElementById('pool-hints');
     this.clock = new THREE.Clock();
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -189,6 +192,14 @@ class App {
     this.mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     this.raycaster.setFromCamera(this.mouseNDC, this.camera);
+
+    const projectPools = this.environment.getProjectPoolMeshes();
+    const poolHits = this.raycaster.intersectObjects(projectPools);
+    if (poolHits.length > 0 && poolHits[0].object.userData.repoUrl) {
+      window.open(poolHits[0].object.userData.repoUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     const treeMeshes = [];
     this.sprout.group.traverse((obj) => { if (obj.isMesh) treeMeshes.push(obj); });
     const hits = this.raycaster.intersectObjects(treeMeshes);
@@ -248,7 +259,7 @@ class App {
     const maturityProgress   = clamp01((s - 0.35) / 0.20);
     const fullGrowthProgress = clamp01((s - 0.55) / 0.45);
     const sunProgress        = clamp01((s - 0.35) / 0.35);
-    const underTreeProgress  = clamp01((s - 0.88) / 0.12);
+    const underTreeProgress  = clamp01((s - 0.92) / 0.08);
 
     // ── UI fades ──
     if (this.heroText) {
@@ -279,7 +290,7 @@ class App {
 
     // ── Phase 3: maturation — browning, seed sinks, initial leaves ──
     this.sprout.setMaturity(maturityProgress);
-    this.environment.setSunProgress(sunProgress, fullGrowthProgress);
+    this.environment.setSunProgress(sunProgress, fullGrowthProgress, underTreeProgress);
     this.flowers.setSunProgress(sunProgress);
     this.renderer.toneMappingExposure = lerp(0.52, 0.68, smooth(sunProgress));
 
@@ -361,23 +372,50 @@ class App {
     this.cameraBase.y = cy;
     this.cameraTarget.y = cty;
 
-    // ── Text overlays — continuous smooth opacity ──
+    // ── Metaphors — top band, one at a time, never overlaps CV at bottom ──
+    const ty = (op) => `${-50 + (1 - op) * 8}%`;
     if (this.plantedText) {
       const ptIn  = smooth(clamp01((sproutProgress - 0.15) / 0.15));
-      const ptOut = 1.0 - smooth(clamp01((sproutProgress - 0.60) / 0.15));
+      const ptOut = 1.0 - smooth(clamp01((sproutProgress - 0.55) / 0.12));
       const ptOp  = ptIn * ptOut;
       this.plantedText.style.opacity = ptOp;
-      this.plantedText.style.transform = `translateY(${(1 - ptOp) * 15}px)`;
+      this.plantedText.style.transform = `translate(-50%, ${ty(ptOp)})`;
+      this.plantedText.style.visibility = ptOp > 0.01 ? 'visible' : 'hidden';
+    }
+    if (this.educationText) {
+      const eduIn  = smooth(clamp01((sproutProgress - 0.45) / 0.15));
+      const eduOut = 1.0 - smooth(clamp01((sproutProgress - 0.92) / 0.08));
+      const eduOp  = eduIn * eduOut;
+      this.educationText.style.opacity = eduOp;
+      this.educationText.style.transform = `translate(-50%, ${ty(eduOp)})`;
+      this.educationText.style.visibility = eduOp > 0.01 ? 'visible' : 'hidden';
+    }
+    if (this.maturityText) {
+      const matIn  = smooth(clamp01((maturityProgress - 0.25) / 0.2));
+      const matOut = 1.0 - smooth(clamp01((maturityProgress - 0.88) / 0.12));
+      const matOp  = matIn * matOut;
+      this.maturityText.style.opacity = matOp;
+      this.maturityText.style.transform = `translate(-50%, ${ty(matOp)})`;
+      this.maturityText.style.visibility = matOp > 0.01 ? 'visible' : 'hidden';
     }
     if (this.grownText) {
-      const gtOp = smooth(clamp01((fullGrowthProgress - 0.60) / 0.20));
+      const gtIn = smooth(clamp01((fullGrowthProgress - 0.55) / 0.12));
+      const gtOut = 1 - smooth(clamp01((fullGrowthProgress - 0.78) / 0.12));
+      const gtOp = gtIn * gtOut;
       this.grownText.style.opacity = gtOp;
-      this.grownText.style.transform = `translateY(${(1 - gtOp) * 15}px)`;
+      this.grownText.style.transform = `translate(-50%, ${ty(gtOp)})`;
+      this.grownText.style.visibility = gtOp > 0.01 ? 'visible' : 'hidden';
     }
     if (this.aboutSection) {
-      const aboutOp = smooth(clamp01((fullGrowthProgress - 0.75) / 0.15));
+      const aboutOp = smooth(clamp01((fullGrowthProgress - 0.82) / 0.12));
       this.aboutSection.style.opacity = aboutOp;
       this.aboutSection.style.pointerEvents = aboutOp > 0.3 ? 'auto' : 'none';
+      this.aboutSection.style.visibility = aboutOp > 0.01 ? 'visible' : 'hidden';
+    }
+    if (this.poolHints) {
+      const hintOp = THREE.MathUtils.smoothstep(sunProgress, 0.35, 0.55) * (1 - THREE.MathUtils.smoothstep(fullGrowthProgress, 0.85, 0.95));
+      this.poolHints.style.opacity = hintOp;
+      this.poolHints.style.visibility = hintOp > 0.01 ? 'visible' : 'hidden';
     }
 
     this._fullGrowthProgress = fullGrowthProgress;

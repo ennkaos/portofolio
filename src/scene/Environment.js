@@ -2,6 +2,14 @@ import * as THREE from 'three';
 
 export const GROUND_Y = -0.5;
 
+const GITHUB_USER = 'ennkaos';
+const PROJECT_POOLS = [
+  { repo: 'PicsavePicsave', size: 0.9 },
+  { repo: 'Lorem-Ipsom-Generator', size: 0.75 },
+  { repo: 'Restaurant-dinamyc-menu', size: 1.0 },
+  { repo: 'Licenta', size: 0.85 },
+];
+
 // Irregular hill boundary — layered sine noise for organic shape (extends to horizon)
 function getHillRadius(angle) {
   const n1 = Math.sin(angle * 2.3) * 0.12 + Math.sin(angle * 5.1 + 1.2) * 0.08;
@@ -198,6 +206,7 @@ export class Environment {
     this._buildDandelions();
     this._buildGround();
     this._buildBackgroundTrees();
+    this._buildProjectPools();
     this._buildGrass();
     this._buildTreeShadow();
     this._buildFog();
@@ -254,6 +263,10 @@ export class Environment {
     groundGlow.target.position.set(0, 0, 0);
     this.scene.add(groundGlow);
     this.scene.add(groundGlow.target);
+
+    this.underTreeLight = new THREE.PointLight(0xFFF4E0, 0, 12, 1.8);
+    this.underTreeLight.position.set(0, 5, 0);
+    this.scene.add(this.underTreeLight);
   }
 
   _buildClouds() {
@@ -391,6 +404,53 @@ export class Environment {
       ray.renderOrder = 4;
       this.sunRayGroup.add(ray);
       this.sunRays.push({ mesh: ray, mat });
+    }
+
+    const underRayGradient = (() => {
+      const c = document.createElement('canvas');
+      c.width = 1;
+      c.height = 64;
+      const ctx = c.getContext('2d');
+      const g = ctx.createLinearGradient(0, 0, 0, 64);
+      g.addColorStop(0, 'rgba(255, 248, 235, 0.18)');
+      g.addColorStop(0.4, 'rgba(255, 245, 220, 0.08)');
+      g.addColorStop(0.75, 'rgba(255, 242, 210, 0.02)');
+      g.addColorStop(1, 'rgba(255, 240, 200, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1, 64);
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    })();
+
+    this.underTreeRayGroup = new THREE.Group();
+    this.underTreeRayGroup.position.set(0, 5.5, 0);
+    this.underTreeRayGroup.visible = false;
+    this.scene.add(this.underTreeRayGroup);
+
+    this.underTreeRays = [];
+    const underRayCount = 6;
+    const underRayWidth = 1.2;
+    const underRayLength = 8;
+    for (let i = 0; i < underRayCount; i++) {
+      const angle = (i / underRayCount) * Math.PI * 2 + 0.15;
+      const geo = new THREE.PlaneGeometry(underRayWidth, underRayLength);
+      geo.translate(0, -underRayLength / 2, 0);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xFFF8E8,
+        map: underRayGradient,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        fog: false,
+      });
+      const ray = new THREE.Mesh(geo, mat);
+      ray.rotation.x = Math.PI * 0.35;
+      ray.rotation.z = -angle;
+      ray.renderOrder = 6;
+      this.underTreeRayGroup.add(ray);
+      this.underTreeRays.push({ mesh: ray, mat });
     }
 
     this.moonPos = new THREE.Vector3(-3, 6, -2).normalize().multiplyScalar(48);
@@ -537,6 +597,105 @@ export class Environment {
     this.scene.add(this.soil);
   }
 
+  _createIrregularPoolShape(baseRadius, seed) {
+    const pts = 16;
+    const points = [];
+    for (let i = 0; i <= pts; i++) {
+      const a = (i / pts) * Math.PI * 2;
+      const n1 = Math.sin(a * 4.3 + seed * 10) * 0.18;
+      const n2 = Math.cos(a * 2.7 + seed * 7) * 0.12;
+      const n3 = Math.sin(a * 7.1 - seed * 3) * 0.08;
+      const r = baseRadius * (1 + n1 + n2 + n3);
+      points.push(new THREE.Vector2(Math.cos(a) * r, Math.sin(a) * r));
+    }
+    const shape = new THREE.Shape(points);
+    return new THREE.ShapeGeometry(shape);
+  }
+
+  _createIrregularPoolRing(innerR, outerR, seed) {
+    const pts = 16;
+    const outer = [];
+    const inner = [];
+    for (let i = 0; i <= pts; i++) {
+      const a = (i / pts) * Math.PI * 2;
+      const n1 = Math.sin(a * 4.3 + seed * 10) * 0.18;
+      const n2 = Math.cos(a * 2.7 + seed * 7) * 0.12;
+      const n3 = Math.sin(a * 7.1 - seed * 3) * 0.08;
+      const rOut = outerR * (1 + n1 + n2 + n3);
+      const rIn = innerR * (1 + n1 + n2 + n3);
+      outer.push(new THREE.Vector2(Math.cos(a) * rOut, Math.sin(a) * rOut));
+      inner.push(new THREE.Vector2(Math.cos(a) * rIn, Math.sin(a) * rIn));
+    }
+    const shape = new THREE.Shape(outer);
+    shape.holes.push(new THREE.Path([...inner].reverse()));
+    return new THREE.ShapeGeometry(shape);
+  }
+
+  _buildProjectPools() {
+    this.projectPoolMeshes = [];
+    this.projectPoolPositions = [];
+    const hash = (a, b) => (Math.abs(Math.sin(a * 12.9898 + b * 78.233) * 43758.5453) % 1);
+    const INNER_R = 2.5;
+    const MAX_R = 12;
+    const placed = [];
+    for (let i = 0; i < PROJECT_POOLS.length; i++) {
+      const p = PROJECT_POOLS[i];
+      const baseRadius = 0.45 + p.size * 0.35;
+      const minGap = baseRadius * 2;
+      const fallbackAngle = Math.PI / 6 + (i / Math.max(1, PROJECT_POOLS.length - 1)) * (Math.PI * 2 / 3) * 0.8;
+      let x = Math.cos(fallbackAngle) * 7, z = Math.sin(fallbackAngle) * 7;
+      for (let attempt = 0; attempt < 80; attempt++) {
+        const angle = Math.PI / 6 + hash(i * 17.3 + attempt * 31.7, 0) * (Math.PI * 2 / 3);
+        const hillR = Math.min(getHillRadius(angle) * 0.85, MAX_R);
+        const r = INNER_R + hash(i * 3.1 + attempt * 7.9, 1) * (hillR - INNER_R);
+        const jitter = 0.8;
+        x = Math.cos(angle) * r + (hash(i * 5.3 + attempt * 11, 2) - 0.5) * jitter;
+        z = Math.sin(angle) * r + (hash(i * 2.7 + attempt * 13, 3) - 0.5) * jitter;
+        const ptAngle = Math.atan2(z, x);
+        const boundaryR = Math.min(getHillRadius(ptAngle) - 0.5, MAX_R);
+        if (Math.sqrt(x * x + z * z) > boundaryR) continue;
+        const overlaps = placed.some((o) => {
+          const dx = x - o.x, dz = z - o.z;
+          return dx * dx + dz * dz < (minGap + o.excludeRadius) * (minGap + o.excludeRadius);
+        });
+        if (!overlaps) break;
+      }
+      const excludeRadius = baseRadius * 1.35;
+      this.projectPoolPositions.push({ x, z, excludeRadius });
+      placed.push({ x, z, excludeRadius });
+
+      const shapeSeed = hash(i * 19.1, 4) * 100;
+      const fillGeo = this._createIrregularPoolShape(baseRadius, shapeSeed);
+      const edgeGeo = this._createIrregularPoolRing(baseRadius, baseRadius * 1.04, shapeSeed);
+      const fillMat = new THREE.MeshBasicMaterial({
+        color: 0x74CCF4,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+      });
+      const edgeMat = new THREE.MeshBasicMaterial({
+        color: 0x5ABCD8,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+      });
+      const fill = new THREE.Mesh(fillGeo, fillMat);
+      fill.rotation.x = -Math.PI / 2;
+      fill.position.set(x, GROUND_Y + 0.002, z);
+      fill.userData.repoUrl = `https://github.com/${GITHUB_USER}/${p.repo}`;
+      fill.userData.isProjectPool = true;
+      this.scene.add(fill);
+      this.projectPoolMeshes.push(fill);
+      const edge = new THREE.Mesh(edgeGeo, edgeMat);
+      edge.rotation.x = -Math.PI / 2;
+      edge.position.set(x, GROUND_Y + 0.001, z);
+      edge.userData.repoUrl = `https://github.com/${GITHUB_USER}/${p.repo}`;
+      edge.userData.isProjectPool = true;
+      this.scene.add(edge);
+      this.projectPoolMeshes.push(edge);
+    }
+  }
+
   _buildBackgroundTrees() {
     const rand = (s) => (Math.abs(Math.sin(s * 12.9898) * 43758.5453) % 1);
     this.backgroundTrees = [];
@@ -557,18 +716,12 @@ export class Environment {
       toneMapped: false,
     });
 
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2 + rand(i * 7) * 0.4;
-      const r = 26 + rand(i * 11) * 6;
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
-      const scale = 0.6 + rand(i * 13) * 1.0;
+    const addTree = (x, z, scale, isRound, i) => {
       const rotY = rand(i * 17) * Math.PI * 2;
-
       const group = new THREE.Group();
       group.rotation.y = rotY;
 
-      if (i % 3 === 0) {
+      if (isRound) {
         const trunkH = 0.25 * scale;
         const trunk = new THREE.Mesh(
           new THREE.CylinderGeometry(0.02, 0.04, trunkH, 5),
@@ -610,6 +763,28 @@ export class Environment {
       group.layers.set(BGTREE_LAYER);
       this.scene.add(group);
       this.backgroundTrees.push({ group });
+    };
+
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 + rand(i * 7) * 0.4;
+      const r = 26 + rand(i * 11) * 6;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      const scale = 0.6 + rand(i * 13) * 1.0;
+      addTree(x, z, scale, i % 3 === 0, i);
+    }
+
+    const HILL_EDGE = 32;
+    const HORIZON_EDGE = 50;
+    for (let i = 16; i < 95; i++) {
+      const a = rand(i * 3.7 + 1) * Math.PI * 2;
+      const r = HILL_EDGE + rand(i * 5.1) * (HORIZON_EDGE - HILL_EDGE);
+      const jitter = 1.2;
+      const x = Math.cos(a) * r + (rand(i * 2.3) - 0.5) * jitter;
+      const z = Math.sin(a) * r + (rand(i * 4.9) - 0.5) * jitter;
+      const distFactor = (r - HILL_EDGE) / (HORIZON_EDGE - HILL_EDGE);
+      const scale = 0.12 + distFactor * 0.2 + rand(i * 8.3) * 0.18;
+      addTree(x, z, scale, rand(i * 6.1) > 0.6, i);
     }
   }
 
@@ -674,7 +849,16 @@ export class Environment {
         h *= 0.7 + heightNoise * 0.6;
       }
 
-      heights[i] = Math.max(0.04, h);
+      let inPool = false;
+      for (const pool of this.projectPoolPositions) {
+        const dx = x - pool.x;
+        const dz = z - pool.z;
+        if (dx * dx + dz * dz < pool.excludeRadius * pool.excludeRadius) {
+          inPool = true;
+          break;
+        }
+      }
+      heights[i] = inPool ? 0 : Math.max(0.04, h);
       widths[i] = 0.28 + Math.random() * 0.95 + heightNoise * 0.2;
       bends[i] = (Math.random() - 0.5) * 2.2 + (heightNoise - 0.5) * 0.4;
     }
@@ -844,7 +1028,7 @@ export class Environment {
     this.scene.fog = new THREE.FogExp2(0x0a1208, 0.12);
   }
 
-  setSunProgress(t, treeGrowth = 0) {
+  setSunProgress(t, treeGrowth = 0, underTreeProgress = 0) {
     t = THREE.MathUtils.clamp(t, 0, 1);
 
     const sunY = THREE.MathUtils.lerp(2, 10, t);
@@ -871,7 +1055,7 @@ export class Environment {
     });
 
     this.ambient.color.setHex(0x3a4a3a).lerp(new THREE.Color(0x9aaa8a), t);
-    this.ambient.intensity = THREE.MathUtils.lerp(0.5, 0.8, t);
+    const baseAmbient = THREE.MathUtils.lerp(0.5, 0.8, t);
 
     this.keyLight.intensity = THREE.MathUtils.lerp(0.7, 1.2, t);
 
@@ -914,6 +1098,23 @@ export class Environment {
       bt.group.scale.setScalar(bgTree);
       bt.group.visible = bgTree > 0.005;
     });
+
+    const poolOpacity = THREE.MathUtils.smoothstep(t, 0.25, 0.6) * 0.98;
+    (this.projectPoolMeshes || []).forEach((m) => { m.material.opacity = poolOpacity; });
+
+    const underRayOp = THREE.MathUtils.smoothstep(underTreeProgress, 0.2, 0.7) * 0.22;
+    this.underTreeRayGroup.visible = underRayOp > 0.01;
+    this.underTreeRays.forEach((r, i) => {
+      r.mat.opacity = underRayOp * (0.7 + Math.sin(i * 1.5) * 0.3);
+    });
+
+    const underLightIntensity = THREE.MathUtils.smoothstep(underTreeProgress, 0.2, 0.7) * 0.5;
+    this.underTreeLight.intensity = underLightIntensity;
+    this.ambient.intensity = baseAmbient + underLightIntensity * 0.35;
+  }
+
+  getProjectPoolMeshes() {
+    return this.projectPoolMeshes || [];
   }
 
   setMousePosition(x, y, z, radius) {
