@@ -23,7 +23,9 @@ class App {
     this.educationText = document.querySelector('.education-text');
     this.maturityText = document.querySelector('.maturity-text');
     this.grownText = document.querySelector('.grown-text');
+    this.treeText = document.querySelector('.tree-text');
     this.aboutSection = document.getElementById('about-section');
+    this.aboutDrawer = document.getElementById('about-drawer');
     this.poolHints = document.getElementById('pool-hints');
     this.clock = new THREE.Clock();
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -45,6 +47,8 @@ class App {
     this.cameraTarget = new THREE.Vector3(0, 0, 0);
     this._smoothLookY = 0;
     this._lastTime = performance.now() * 0.001;
+    this.isMobile = window.innerWidth < 768 || 'ontouchstart' in window;
+    this.mobileZoomFactor = 1.35;
 
     this._init();
   }
@@ -97,8 +101,10 @@ class App {
 
   _createCamera() {
     const aspect = window.innerWidth / window.innerHeight;
-    this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
-    this.camera.position.set(0, 0.15, 3.2);
+    const fov = this.isMobile ? 55 : 45;
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 100);
+    const zInit = this.isMobile ? 3.2 * this.mobileZoomFactor : 3.2;
+    this.camera.position.set(0, 0.15, zInit);
     this.camera.lookAt(0, 0, 0);
   }
 
@@ -184,6 +190,21 @@ class App {
     });
 
     this.container.addEventListener('click', (e) => this._onClick(e));
+
+    const drawerTrigger = document.getElementById('about-drawer-trigger');
+    if (drawerTrigger) {
+      drawerTrigger.addEventListener('click', () => this._toggleAboutDrawer());
+    }
+  }
+
+  _toggleAboutDrawer() {
+    if (!this.aboutDrawer) return;
+    const isOpen = this.aboutDrawer.classList.toggle('open');
+    const trigger = document.getElementById('about-drawer-trigger');
+    if (trigger) {
+      trigger.setAttribute('aria-expanded', isOpen);
+      trigger.setAttribute('aria-label', isOpen ? 'Close CV' : 'Open CV');
+    }
   }
 
   _onClick(e) {
@@ -214,6 +235,8 @@ class App {
   _onResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;
+    this.isMobile = w < 768 || 'ontouchstart' in window;
+    this.camera.fov = this.isMobile ? 55 : 45;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
@@ -375,42 +398,55 @@ class App {
     // ── Metaphors — top band, one at a time, never overlaps CV at bottom ──
     const ty = (op) => `${-50 + (1 - op) * 8}%`;
     if (this.plantedText) {
-      const ptIn  = smooth(clamp01((sproutProgress - 0.15) / 0.15));
-      const ptOut = 1.0 - smooth(clamp01((sproutProgress - 0.55) / 0.12));
+      const ptIn  = smooth(clamp01((sproutProgress - 0.12) / 0.18));
+      const ptOut = 1.0 - smooth(clamp01((sproutProgress - 0.62) / 0.15));
       const ptOp  = ptIn * ptOut;
       this.plantedText.style.opacity = ptOp;
       this.plantedText.style.transform = `translate(-50%, ${ty(ptOp)})`;
       this.plantedText.style.visibility = ptOp > 0.01 ? 'visible' : 'hidden';
     }
     if (this.educationText) {
-      const eduIn  = smooth(clamp01((sproutProgress - 0.45) / 0.15));
-      const eduOut = 1.0 - smooth(clamp01((sproutProgress - 0.92) / 0.08));
+      const eduIn  = smooth(clamp01((sproutProgress - 0.40) / 0.18));
+      const eduOut = 1.0 - smooth(clamp01((sproutProgress - 0.88) / 0.15));
       const eduOp  = eduIn * eduOut;
       this.educationText.style.opacity = eduOp;
       this.educationText.style.transform = `translate(-50%, ${ty(eduOp)})`;
       this.educationText.style.visibility = eduOp > 0.01 ? 'visible' : 'hidden';
     }
     if (this.maturityText) {
-      const matIn  = smooth(clamp01((maturityProgress - 0.25) / 0.2));
-      const matOut = 1.0 - smooth(clamp01((maturityProgress - 0.88) / 0.12));
+      const matIn  = smooth(clamp01((maturityProgress - 0.20) / 0.25));
+      const matOut = 1.0 - smooth(clamp01((fullGrowthProgress - 0.55) / 0.25));
       const matOp  = matIn * matOut;
       this.maturityText.style.opacity = matOp;
       this.maturityText.style.transform = `translate(-50%, ${ty(matOp)})`;
       this.maturityText.style.visibility = matOp > 0.01 ? 'visible' : 'hidden';
     }
     if (this.grownText) {
-      const gtIn = smooth(clamp01((fullGrowthProgress - 0.55) / 0.12));
-      const gtOut = 1 - smooth(clamp01((fullGrowthProgress - 0.78) / 0.12));
-      const gtOp = gtIn * gtOut;
+      const gtIn  = smooth(clamp01((fullGrowthProgress - 0.50) / 0.18));
+      const gtOut = 1.0 - smooth(clamp01((fullGrowthProgress - 0.82) / 0.15));
+      const gtOp  = gtIn * gtOut;
       this.grownText.style.opacity = gtOp;
       this.grownText.style.transform = `translate(-50%, ${ty(gtOp)})`;
       this.grownText.style.visibility = gtOp > 0.01 ? 'visible' : 'hidden';
     }
-    if (this.aboutSection) {
+    if (this.treeText) {
+      const treeIn  = smooth(clamp01((underTreeProgress - 0.15) / 0.25));
+      const treeOp  = treeIn;
+      this.treeText.style.opacity = treeOp;
+      this.treeText.style.transform = `translate(-50%, ${ty(treeOp)})`;
+      this.treeText.style.visibility = treeOp > 0.01 ? 'visible' : 'hidden';
+    }
+    if (this.aboutDrawer) {
       const aboutOp = smooth(clamp01((fullGrowthProgress - 0.82) / 0.12));
-      this.aboutSection.style.opacity = aboutOp;
-      this.aboutSection.style.pointerEvents = aboutOp > 0.3 ? 'auto' : 'none';
-      this.aboutSection.style.visibility = aboutOp > 0.01 ? 'visible' : 'hidden';
+      this.aboutDrawer.style.opacity = aboutOp;
+      this.aboutDrawer.style.pointerEvents = aboutOp > 0.3 ? 'auto' : 'none';
+      this.aboutDrawer.style.visibility = aboutOp > 0.01 ? 'visible' : 'hidden';
+      if (this.aboutSection && !this.isMobile) {
+        this.aboutSection.classList.toggle('visible', aboutOp > 0.01);
+      }
+      if (this.isMobile && aboutOp < 0.01) {
+        this.aboutDrawer.classList.remove('open');
+      }
     }
     if (this.poolHints) {
       const hintOp = THREE.MathUtils.smoothstep(sunProgress, 0.35, 0.55) * (1 - THREE.MathUtils.smoothstep(fullGrowthProgress, 0.85, 0.95));
@@ -443,7 +479,8 @@ class App {
     }
 
     const camLerp = 1.0 - Math.exp(-3.5 * dt);
-    this.camera.position.z += (this.cameraBase.z - this.camera.position.z) * camLerp;
+    const zTarget = this.cameraBase.z * (this.isMobile ? this.mobileZoomFactor : 1);
+    this.camera.position.z += (zTarget - this.camera.position.z) * camLerp;
     this.camera.position.y += (this.cameraBase.y - this.camera.position.y) * camLerp;
 
     this._smoothLookY += (this.cameraTarget.y - this._smoothLookY) * camLerp;
