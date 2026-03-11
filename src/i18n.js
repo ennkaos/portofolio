@@ -8,6 +8,7 @@ const translations = {
     heroTitle: 'Software Engineer <em>·</em> Web Developer <em>·</em> Graphic Designer <em>·</em> Solution Architect <em>·</em> Business Analyst',
     heroMeta: 'every great thing begins with a seed of an <em>idea</em>',
     scrollHint: 'scroll to grow',
+    scrollHintUp: 'scroll up',
     planted: 'the <em>idea</em> was planted',
     education: 'BSc Economic Informatics — Transilvania University of Brașov <em>(2018–2021)</em>',
     maturity: 'university behind me — time to build my <em>own</em> things',
@@ -31,12 +32,14 @@ const translations = {
     aboutExpDetail: 'Credem Bank batch systems · ItaloTreno portal (React) · Dynamic form engine (Angular) · Fleet management & HR portals for Italian Ministry',
     aboutEdu: 'BSc Economic Informatics',
     aboutEduAt: 'Transilvania University of Brașov (2018–2021)',
+    eduTitle: 'Education',
+    skillsTitle: 'Skills',
+    aboutTitle: 'About & Contact',
     projectsTitle: 'Projects',
     projectsHint: 'Click on the pools in the grass to dive in — each opens a GitHub repo.',
     projectsPrivacy: 'Many of my projects are protected by privacy laws and NDAs, so I cannot display them publicly.',
     projectsMore: 'There are many other projects I cannot show here.',
     viewGitHub: 'View all on GitHub',
-    contactTitle: 'Contact',
   },
   it: {
     metaDesc: 'Alexandru Florin Bucur — Ingegnere Software, Sviluppatore Web, Graphic Designer, Solution Architect & Business Analyst. Da un seme di idea a qualcosa di straordinario.',
@@ -68,12 +71,14 @@ const translations = {
     aboutExpDetail: 'Sistemi batch Credem Bank · portale ItaloTreno (React) · motore form dinamici (Angular) · gestione flotte e portali HR per Ministero italiano',
     aboutEdu: 'Laurea in Informatica Economica',
     aboutEduAt: 'Università Transilvania di Brașov (2018–2021)',
+    eduTitle: 'Formazione',
+    skillsTitle: 'Competenze',
+    aboutTitle: 'Chi sono & Contatti',
     projectsTitle: 'Progetti',
     projectsHint: 'Clicca sulle pozze nell\'erba per immergerti — ognuna apre un repo GitHub.',
     projectsPrivacy: 'Molti dei miei progetti sono protetti da leggi sulla privacy e NDA, quindi non posso mostrarli pubblicamente.',
     projectsMore: 'Ci sono molti altri progetti che non posso mostrare qui.',
     viewGitHub: 'Vedi tutto su GitHub',
-    contactTitle: 'Contatti',
   },
   ro: {
     loading: 'Plantăm sămânța...',
@@ -81,6 +86,7 @@ const translations = {
     heroTitle: 'Inginer Software <em>·</em> Dezvoltator Web <em>·</em> Graphic Designer <em>·</em> Solution Architect <em>·</em> Business Analyst',
     heroMeta: 'orice lucru mare începe cu o sămânță de <em>idee</em>',
     scrollHint: 'derulează pentru a crește',
+    scrollHintUp: 'derulează în sus',
     planted: '<em>ideea</em> a fost plantată',
     education: 'Licență Informatică Economică — Universitatea Transilvania din Brașov <em>(2018–2021)</em>',
     maturity: 'universitatea în urmă — timpul să-mi construiesc lucrurile <em>mele</em>',
@@ -104,12 +110,14 @@ const translations = {
     aboutExpDetail: 'Sisteme batch Credem Bank · portal ItaloTreno (React) · motor formulare dinamice (Angular) · management flotă și portale HR pentru Ministerul Italian',
     aboutEdu: 'Licență Informatică Economică',
     aboutEduAt: 'Universitatea Transilvania din Brașov (2018–2021)',
+    eduTitle: 'Educație',
+    skillsTitle: 'Competențe',
+    aboutTitle: 'Despre & Contact',
     projectsTitle: 'Proiecte',
     projectsHint: 'Apasă pe bălțile din iarbă pentru a te scufunda — fiecare deschide un repo GitHub.',
     projectsPrivacy: 'Multe din proiectele mele sunt protejate de legi privind confidențialitatea și NDA, deci nu le pot afișa public.',
     projectsMore: 'Există multe alte proiecte pe care nu le pot arăta aici.',
     viewGitHub: 'Vezi toate pe GitHub',
-    contactTitle: 'Contact',
   },
 };
 
@@ -150,10 +158,9 @@ export function applyTranslations(lang = getLang()) {
   };
 
   set('.loader-text', 'loading');
-  set('.hero-subtitle', 'heroSubtitle');
-  set('.hero-title', 'heroTitle', 'innerHTML');
   set('.hero-meta', 'heroMeta', 'innerHTML');
-  set('.scroll-hint-text', 'scrollHint');
+  set('.scroll-hint-down', 'scrollHint');
+  set('.scroll-hint-up', 'scrollHintUp');
   set('.planted-text', 'planted', 'innerHTML');
   set('.education-text', 'education', 'innerHTML');
   set('.maturity-text', 'maturity', 'innerHTML');
@@ -161,14 +168,9 @@ export function applyTranslations(lang = getLang()) {
   set('.tree-text', 'tree', 'innerHTML');
   set('#flower-hint', 'flowerHint');
   set('#pool-privacy-hint', 'poolPrivacy');
-  set('.about-drawer-label', 'cvLabel');
-
-  const drawerTrigger = document.getElementById('about-drawer-trigger');
-  if (drawerTrigger) {
-    const isOpen = document.getElementById('about-drawer')?.classList.contains('open');
-    drawerTrigger.setAttribute('aria-label', isOpen ? t.cvClose : t.cvOpen);
-  }
-
+  set('.about-education .about-block-title', 'eduTitle');
+  set('.about-skills-block .about-block-title', 'skillsTitle');
+  set('.about-contact-block .about-block-title', 'aboutTitle');
   set('.about-role', 'aboutRole');
   set('.about-langs', 'aboutLangs');
   set('.about-text', 'aboutText', 'innerHTML');
@@ -193,6 +195,4 @@ export function applyTranslations(lang = getLang()) {
   const moreEl = document.querySelector('.projects-more');
   if (moreEl) moreEl.innerHTML = `${t.projectsMore} <a href="https://github.com/ennkaos" target="_blank" rel="noopener noreferrer" class="content-link">${t.viewGitHub}</a>`;
 
-  const contactTitle = document.querySelector('#contact .content-title');
-  if (contactTitle) contactTitle.textContent = t.contactTitle;
 }

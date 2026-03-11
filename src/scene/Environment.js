@@ -120,6 +120,7 @@ void main() {
 const SKY_FRAG = `
 uniform float uProgress;
 uniform vec3 uSunDir;
+uniform float uTime;
 varying vec3 vDir;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -127,10 +128,12 @@ float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 void main() {
   float y = vDir.y;
 
-  vec3 nightColor = vec3(0.039, 0.071, 0.031);
+  vec3 nightZenith = vec3(0.02, 0.03, 0.08);
+  vec3 nightHorizon = vec3(0.04, 0.05, 0.12);
+  vec3 nightBelow = vec3(0.015, 0.02, 0.04);
+  vec3 nightColor = mix(nightBelow, mix(nightHorizon, nightZenith, smoothstep(-0.3, 0.6, y)), smoothstep(-0.5, 0.0, y));
 
   float sunDot = dot(normalize(vDir), uSunDir);
-  float rayleigh = pow(1.0 - max(y, 0.0), 2.2);
   vec3 zenith  = vec3(0.25, 0.45, 0.72);
   vec3 skyMid  = vec3(0.42, 0.58, 0.78);
   vec3 horizon = vec3(0.68, 0.72, 0.65);
@@ -155,13 +158,23 @@ void main() {
 
   vec3 col = mix(nightColor, dayColor, uProgress);
 
-  float starMask = smoothstep(0.15, 0.05, uProgress) * smoothstep(-0.2, 0.3, y);
+  float starMask = (1.0 - smoothstep(0.0, 0.22, uProgress)) * smoothstep(-0.2, 0.55, y);
   vec2 starUV = vec2(atan(vDir.z, vDir.x) / 6.28318 + 0.5, asin(vDir.y) / 3.14159 + 0.5);
-  starUV *= 120.0;
+  starUV *= 720.0;
   vec2 starId = floor(starUV);
+  vec2 starPos = fract(starUV);
+  float dist = length(starPos - 0.5);
   float star = hash(starId) * hash(starId + 1.0);
-  star = smoothstep(0.992, 0.995, star) * (0.8 + hash(starId * 2.0) * 0.4);
-  col += vec3(star, star * 0.98, star * 1.05) * starMask;
+  float bright = smoothstep(0.93, 0.995, star) * (1.05 + hash(starId * 2.0) * 0.4);
+  float dim = smoothstep(0.45, 0.88, star) * (1.0 - smoothstep(0.93, 0.998, star)) * 0.78;
+  star = bright + dim;
+  float starRadius = 0.09 + hash(starId * 3.0) * 0.06;
+  float starShape = 1.0 - smoothstep(starRadius * 0.2, starRadius, dist);
+  star *= starShape;
+  float glow = 1.0 - smoothstep(starRadius, starRadius * 2.8, dist);
+  star += glow * 0.25 * (bright + dim * 0.6);
+  float twinkle = 0.92 + 0.08 * sin(uTime * 2.3 + starId.x * 7.1 + starId.y * 5.3);
+  col += vec3(star, star * 0.98, star * 1.08) * starMask * twinkle * 1.5;
 
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -217,6 +230,7 @@ export class Environment {
     this.skyUniforms = {
       uProgress: { value: 0 },
       uSunDir: { value: new THREE.Vector3(0, 1, 0) },
+      uTime: { value: 0 },
     };
     const mat = new THREE.ShaderMaterial({
       name: 'Sky',
@@ -453,19 +467,6 @@ export class Environment {
       this.underTreeRays.push({ mesh: ray, mat });
     }
 
-    this.moonPos = new THREE.Vector3(-3, 6, -2).normalize().multiplyScalar(48);
-    const moonGeo = new THREE.SphereGeometry(1.8, 24, 16);
-    this.moonMat = new THREE.MeshBasicMaterial({
-      color: 0xE8F0FF,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      fog: false,
-    });
-    this.moon = new THREE.Mesh(moonGeo, this.moonMat);
-    this.moon.position.copy(this.moonPos);
-    this.moon.renderOrder = -60;
-    this.scene.add(this.moon);
   }
 
   _buildBirds() {
@@ -699,7 +700,6 @@ export class Environment {
   _buildBackgroundTrees() {
     const rand = (s) => (Math.abs(Math.sin(s * 12.9898) * 43758.5453) % 1);
     this.backgroundTrees = [];
-    const BGTREE_LAYER = 1;
     const pineMat = new THREE.MeshBasicMaterial({
       color: 0x1a2518,
       fog: false,
@@ -760,7 +760,7 @@ export class Environment {
       }
 
       group.position.set(x, GROUND_Y, z);
-      group.layers.set(BGTREE_LAYER);
+      group.layers.set(0);
       this.scene.add(group);
       this.backgroundTrees.push({ group });
     };
@@ -1037,35 +1037,34 @@ export class Environment {
     this.skyUniforms.uSunDir.value.copy(this.sunWorldPos).normalize();
 
     this.sunLight.intensity = t * 1.1;
+    this.keyLight.intensity = THREE.MathUtils.lerp(0.4, 1.2, t);
     this.sunLight.position.y = sunY;
     this.sunDisc.position.copy(this.sunWorldPos);
     this.sunGlow.position.copy(this.sunWorldPos);
-    this.sunDiscMat.opacity = THREE.MathUtils.smoothstep(t, 0.08, 0.45) * 0.5;
-    this.sunGlowMat.opacity = THREE.MathUtils.smoothstep(t, 0.1, 0.5) * 0.12;
-    this.moonMat.opacity = (1 - THREE.MathUtils.smoothstep(t, 0.02, 0.2)) * 0.75;
+    const sunVisible = t > 0.06;
+    this.sunDiscMat.opacity = sunVisible ? THREE.MathUtils.smoothstep(t, 0.08, 0.45) * 0.5 : 0;
+    this.sunGlowMat.opacity = sunVisible ? THREE.MathUtils.smoothstep(t, 0.1, 0.5) * 0.12 : 0;
 
     this.cloudUniforms.uSunDir.value.copy(this.sunWorldPos).normalize();
     const cloudOpacity = THREE.MathUtils.smoothstep(t, 0.25, 0.6) * 0.22;
     this.cloudGroups.forEach((c) => { c.mat.uniforms.uOpacity.value = cloudOpacity * (c.opacityMult ?? 1); });
 
     this.sunRayGroup.position.copy(this.sunWorldPos);
-    const rayOpacity = THREE.MathUtils.smoothstep(t, 0.2, 0.55) * 0.12;
+    const rayOpacity = t > 0.15 ? THREE.MathUtils.smoothstep(t, 0.2, 0.55) * 0.12 : 0;
     this.sunRays.forEach((r, i) => {
       r.mat.opacity = rayOpacity * (0.85 + Math.sin(i * 1.2) * 0.15);
     });
 
-    this.ambient.color.setHex(0x3a4a3a).lerp(new THREE.Color(0x9aaa8a), t);
-    const baseAmbient = THREE.MathUtils.lerp(0.5, 0.8, t);
+    this.ambient.color.setHex(0x1a2030).lerp(new THREE.Color(0x9aaa8a), t);
+    const baseAmbient = THREE.MathUtils.lerp(0.35, 0.8, t);
 
-    this.keyLight.intensity = THREE.MathUtils.lerp(0.7, 1.2, t);
-
-    this.fillLight.color.setHex(0x88b892).lerp(new THREE.Color(0xC8E8B0), t);
-    this.fillLight.intensity = THREE.MathUtils.lerp(0.25, 0.5, t);
+    this.fillLight.color.setHex(0x6080a0).lerp(new THREE.Color(0xC8E8B0), t);
+    this.fillLight.intensity = THREE.MathUtils.lerp(0.15, 0.5, t);
 
     this.rimLight.intensity = THREE.MathUtils.lerp(0.35, 0.1, t);
     this.frontFill.intensity = THREE.MathUtils.lerp(0.35, 0.2, t);
 
-    const fogNight = new THREE.Color(0x0a1208);
+    const fogNight = new THREE.Color(0x080a14);
     const fogDay = new THREE.Color(0x8AAA78);
     this.scene.fog.color.copy(fogNight).lerp(fogDay, t);
     this.scene.fog.density = THREE.MathUtils.lerp(0.12, 0.03, t);
@@ -1078,7 +1077,7 @@ export class Environment {
 
     this.soilMat.opacity = THREE.MathUtils.smoothstep(t, 0.05, 0.35);
 
-    const grassGrow = THREE.MathUtils.smoothstep(t, 0.2, 0.7);
+    const grassGrow = THREE.MathUtils.smoothstep(t, 0.04, 0.55);
     this.grassUniforms.uGrow.value = grassGrow;
     this.grassUniforms.uSunProgress.value = t;
     this.grassMesh.visible = grassGrow > 0.001;
@@ -1093,7 +1092,7 @@ export class Environment {
     this.bees.material.opacity = THREE.MathUtils.smoothstep(t, 0.3, 0.55) * 0.7;
     this.dandelions.material.opacity = THREE.MathUtils.smoothstep(t, 0.25, 0.6) * 0.65;
 
-    const bgTree = THREE.MathUtils.smoothstep(t, 0.08, 0.35);
+    const bgTree = THREE.MathUtils.smoothstep(t, 0.02, 0.4);
     this.backgroundTrees.forEach((bt, i) => {
       bt.group.scale.setScalar(bgTree);
       bt.group.visible = bgTree > 0.005;
@@ -1124,6 +1123,7 @@ export class Environment {
 
   update(time) {
     this.grassUniforms.uTime.value = time;
+    if (this.skyUniforms?.uTime) this.skyUniforms.uTime.value = time;
     if (this.fireflies.material.uniforms?.uTime) this.fireflies.material.uniforms.uTime.value = time;
     const pos = this.dustMotes.geometry.attributes.position.array;
     for (let i = 0; i < pos.length; i += 3) {

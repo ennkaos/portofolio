@@ -6,6 +6,7 @@ varying float vYNorm;
 
 uniform float uTime;
 uniform float uPulse;
+uniform float uOpacity;
 uniform vec3 uColorDark;
 uniform vec3 uColorMid;
 uniform vec3 uColorLight;
@@ -169,5 +170,5 @@ void main() {
   float pulse = (sin(uTime * 2.0) * 0.5 + 0.5) * uPulse;
   lit += uGlowColor * fresnel * 0.06 * pulse;
 
-  gl_FragColor = vec4(lit, 1.0);
+  gl_FragColor = vec4(lit, uOpacity);
 }

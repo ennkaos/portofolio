@@ -17,6 +17,7 @@ export class Seed {
     this.uniforms = {
       uTime: { value: 0 },
       uPulse: { value: 1.0 },
+      uOpacity: { value: 1.0 },
       uColorDark: { value: SHELL_DARK },
       uColorMid: { value: SHELL_MID },
       uColorLight: { value: SHELL_LIGHT },
@@ -114,6 +115,7 @@ export class Seed {
       fragmentShader: seedFragmentShader,
       uniforms: this.uniforms,
       side: THREE.FrontSide,
+      transparent: true,
       depthWrite: true,
       depthTest: true,
     });
@@ -127,6 +129,7 @@ export class Seed {
       color: 0x3D2B1A,
       roughness: 0.92,
       metalness: 0.0,
+      transparent: true,
     });
 
     // tipY = 0.55 * 1.25 = 0.6875
@@ -137,6 +140,7 @@ export class Seed {
       color: 0x4A3520,
       roughness: 0.88,
       metalness: 0.0,
+      transparent: true,
     });
     const baseGeo = new THREE.SphereGeometry(0.045, 12, 10);
     const base = new THREE.Mesh(baseGeo, baseMat);
@@ -179,6 +183,7 @@ export class Seed {
           emissiveIntensity: 0.6,
           roughness: 0.2,
           metalness: 0.3,
+          transparent: true,
         });
 
         this.textMesh = new THREE.Mesh(textGeo, textMat);
@@ -188,6 +193,15 @@ export class Seed {
         this.group.add(this.textMesh);
       }
     );
+  }
+
+  setOpacity(v) {
+    this.uniforms.uOpacity.value = v;
+    this.group.traverse((child) => {
+      if (child.material && child.material !== this.mesh?.material) {
+        child.material.opacity = v;
+      }
+    });
   }
 
   update(time) {
